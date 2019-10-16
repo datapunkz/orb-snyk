@@ -1,0 +1,4 @@
+flask == 1.0.0
+pyinstaller
+pytest 
+pylint
