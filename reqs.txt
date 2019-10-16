@@ -1,4 +1,0 @@
-flask 
-pyinstaller 
-pytest 
-pylint
