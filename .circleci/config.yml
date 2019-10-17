@@ -6,7 +6,7 @@ jobs:
     docker:
       - image: circleci/python:3.7.2
         environment:
-          PIPENV_VENV_IN_PROJECT: 'true'
+          PATH: "$PATH:~/.local/bin"
     steps:
       - checkout
       - run:
@@ -20,6 +20,8 @@ jobs:
   build_push_image:
     docker:
       - image: circleci/python:3.7.2
+        environment:
+          PATH: "$PATH:~/.local/bin"
     steps:
       - checkout
       - setup_remote_docker:
