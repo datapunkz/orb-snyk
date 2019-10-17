@@ -1,0 +1,43 @@
+version: 2.1
+orbs:
+  snyk: snyk/snyk@0.0.8
+jobs:
+  build_test:
+    docker:
+      - image: circleci/python:3.7.2
+    steps:
+      - checkout
+      - run:
+          name: Install Python Dependencies
+          command: |
+            echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV && source $BASH_ENV
+            pip install --user -r requirements.txt
+      - run:
+          name: Run Tests
+          command: |
+            pytest
+  build_push_image:
+    docker:
+      - image: circleci/python:3.7.2
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: false
+      - run:
+          name: Build and push Docker image
+          command: |
+            echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV
+            echo 'export TAG=${CIRCLE_SHA1}' >> $BASH_ENV
+            echo 'export IMAGE_NAME=orb-snyk' >> $BASH_ENV && source $BASH_ENV
+            pip install --user -r requirements.txt
+            pyinstaller -F hello_world.py
+            docker build -t $DOCKER_LOGIN/$IMAGE_NAME -t $DOCKER_LOGIN/$IMAGE_NAME:$TAG .
+            echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
+            docker push $DOCKER_LOGIN/$IMAGE_NAME
+workflows:
+  build_test_deploy:
+    jobs:
+      - build_test
+      - build_push_image:
+          requires:
+            - build_test
