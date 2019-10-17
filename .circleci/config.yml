@@ -26,12 +26,11 @@ jobs:
       - run:
           name: Build and push Docker image
           command: |
-            echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV && source $BASH_ENV   
+            echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV
+            echo 'export TAG=${CIRCLE_SHA1}' >> $BASH_ENV
+            echo 'export IMAGE_NAME=orb-snyk' >> $BASH_ENV && source $BASH_ENV
             pip install --user -r requirements.txt
             pyinstaller -F hello_world.py
-            echo 'export TAG=${CIRCLE_SHA1}' >> $BASH_ENV
-            echo 'export IMAGE_NAME=orb-snyk' >> $BASH_ENV
-            source $BASH_ENV
             docker build -t $DOCKER_LOGIN/$IMAGE_NAME -t $DOCKER_LOGIN/$IMAGE_NAME:$TAG .
             echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
             docker push $DOCKER_LOGIN/$IMAGE_NAME
