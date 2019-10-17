@@ -5,13 +5,12 @@ jobs:
   build_test:
     docker:
       - image: circleci/python:3.7.2
-        environment:
-          PATH: "$PATH:~/.local/bin"
     steps:
       - checkout
       - run:
           name: Install Python Dependencies
           command: |
+            echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV
             pip install --user -r requirements.txt
       - run:
           name: Run Tests
@@ -20,15 +19,14 @@ jobs:
   build_push_image:
     docker:
       - image: circleci/python:3.7.2
-        environment:
-          PATH: "$PATH:~/.local/bin"
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: false
       - run:
           name: Build and push Docker image
-          command: |       
+          command: |
+            echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV       
             pip install --user -r requirements.txt
             pyinstaller -F hello_world.py
             echo 'export TAG=${CIRCLE_SHA1}' >> $BASH_ENV
