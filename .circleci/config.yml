@@ -21,12 +21,12 @@ jobs:
       #         curl -sL https://deb.nodesource.com/setup_8.x | sudo bash -
       #         sudo apt install nodejs
       #         npm install -q
-      - snyk/scan
       - run:
           name: Install Python Dependencies
           command: |
             echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV && source $BASH_ENV
             pip install --user -r requirements.txt
+      - snyk/scan
       - run:
           name: Run Tests
           command: |
