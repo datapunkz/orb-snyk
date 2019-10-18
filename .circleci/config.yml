@@ -2,25 +2,25 @@ version: 2.1
 orbs:
   snyk: snyk/snyk@0.0.8
 jobs:
-  security_scan:
-    docker:
-      - image: circleci/node:4.8.2
-    steps:
-      - checkout
-      - run: npm install -q
-      - snyk/scan
+  # security_scan:
+  #   docker:
+  #     - image: circleci/node:4.8.2
+  #   steps:
+  #     - checkout
+  #     - run: npm install -q
+  #     - snyk/scan
 
   build_test:
     docker:
       - image: circleci/python:3.7.2
     steps:
       - checkout
-      - run: 
-          name: Install npm
-          command: |
-              curl -sL https://deb.nodesource.com/setup_8.x | sudo bash -
-              sudo apt install nodejs
-              npm install -q
+      # - run: 
+      #     name: Install npm
+      #     command: |
+      #         curl -sL https://deb.nodesource.com/setup_8.x | sudo bash -
+      #         sudo apt install nodejs
+      #         npm install -q
       - snyk/scan
       - run:
           name: Install Python Dependencies
@@ -53,7 +53,7 @@ workflows:
   build_test_deploy:
     jobs:
       - build_test
-      - security_scan
+      # - security_scan
       - build_push_image:
           requires:
             - build_test
