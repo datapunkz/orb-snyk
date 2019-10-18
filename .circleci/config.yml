@@ -25,7 +25,7 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: false
       - run:
-          name: Build and push Docker image
+          name: Build and Scan Docker image
           command: |
             echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV
             echo 'export TAG=${CIRCLE_SHA1}' >> $BASH_ENV
@@ -33,6 +33,12 @@ jobs:
             pip install --user -r requirements.txt
             pyinstaller -F hello_world.py
             docker build -t $DOCKER_LOGIN/$IMAGE_NAME -t $DOCKER_LOGIN/$IMAGE_NAME:$TAG .
+      - snyk/scan:
+          docker-image-name: $DOCKER_LOGIN/$IMAGE_NAME:$TAG
+          target-file: "Dockerfile"
+      - run:
+          name: Push Docker image to Docker Hub
+          command: |
             echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
             docker push $DOCKER_LOGIN/$IMAGE_NAME
 workflows:
