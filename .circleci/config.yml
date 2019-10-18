@@ -35,6 +35,7 @@ jobs:
             docker build -t $DOCKER_LOGIN/$IMAGE_NAME -t $DOCKER_LOGIN/$IMAGE_NAME:$TAG .
       - snyk/scan:
           fail-on-issues: true
+          monitor-on-build: true
           docker-image-name: $DOCKER_LOGIN/$IMAGE_NAME:$TAG
           target-file: "Dockerfile"
           project: ${CIRCLE_PROJECT_REPONAME}/${CIRCLE_BRANCH}-app
