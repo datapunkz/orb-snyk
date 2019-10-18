@@ -14,7 +14,7 @@ jobs:
             pip install --user -r requirements.txt
       - snyk/scan
       - run:
-          name: Run Tests
+          name: Run Unit Tests
           command: |
             pytest
   build_push_image:
@@ -39,7 +39,6 @@ workflows:
   build_test_deploy:
     jobs:
       - build_test
-      # - security_scan
       - build_push_image:
           requires:
             - build_test
