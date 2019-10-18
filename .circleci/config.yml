@@ -35,7 +35,7 @@ jobs:
             pyinstaller -F hello_world.py
             docker build -t $DOCKER_LOGIN/$IMAGE_NAME -t $DOCKER_LOGIN/$IMAGE_NAME:$TAG .
       - snyk/scan:
-          docker-image-name: $DOCKER_LOGIN/$IMAGE_NAME:$TAG
+          # docker-image-name: $DOCKER_LOGIN/$IMAGE_NAME:$TAG
           target-file: "Dockerfile"
       - run:
           name: Push Docker image to Docker Hub
