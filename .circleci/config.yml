@@ -2,7 +2,7 @@ version: 2.1
 orbs:
   snyk: snyk/snyk@0.0.8
 jobs:
-  build_test:
+  run_tests:
     docker:
       - image: circleci/python:3.7.4
     steps:
@@ -17,38 +17,7 @@ jobs:
           name: Run Unit Tests
           command: |
             pytest
-  build_push_image:
-    docker:
-      - image: circleci/python:3.7.4
-    steps:
-      - checkout
-      - setup_remote_docker:
-          docker_layer_caching: false
-      - run:
-          name: Build and Scan Docker image
-          command: |
-            echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV
-            echo 'export TAG=${CIRCLE_SHA1}' >> $BASH_ENV
-            echo 'export IMAGE_NAME=orb-snyk' >> $BASH_ENV && source $BASH_ENV
-            pip install --user -r requirements.txt
-            pyinstaller -F hello_world.py
-            docker build -t $DOCKER_LOGIN/$IMAGE_NAME -t $DOCKER_LOGIN/$IMAGE_NAME:$TAG .
-      - snyk/scan:
-          fail-on-issues: true
-          monitor-on-build: true
-          docker-image-name: $DOCKER_LOGIN/$IMAGE_NAME:$TAG
-          target-file: "Dockerfile"
-          project: ${CIRCLE_PROJECT_REPONAME}/${CIRCLE_BRANCH}-app
-          organization: ${SNYK_CICD_ORGANIZATION} 
-      - run:
-          name: Push Docker image to Docker Hub
-          command: |
-            echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
-            docker push $DOCKER_LOGIN/$IMAGE_NAME
 workflows:
-  build_test_deploy:
+  build_test:
     jobs:
-      - build_test
-      - build_push_image:
-          requires:
-            - build_test
+      - run_tests
