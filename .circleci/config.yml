@@ -4,7 +4,7 @@ orbs:
 jobs:
   build_test:
     docker:
-      - image: circleci/python:3.7.2
+      - image: circleci/python:3.7.4
     steps:
       - checkout
       - run:
@@ -19,7 +19,7 @@ jobs:
             pytest
   build_push_image:
     docker:
-      - image: circleci/python:3.7.2
+      - image: circleci/python:3.7.4
     steps:
       - checkout
       - setup_remote_docker:
@@ -34,10 +34,12 @@ jobs:
             pyinstaller -F hello_world.py
             docker build -t $DOCKER_LOGIN/$IMAGE_NAME -t $DOCKER_LOGIN/$IMAGE_NAME:$TAG .
       - snyk/scan:
+          fail-on-issues: true
+          monitor-on-build: true
           docker-image-name: $DOCKER_LOGIN/$IMAGE_NAME:$TAG
           target-file: "Dockerfile"
           project: ${CIRCLE_PROJECT_REPONAME}/${CIRCLE_BRANCH}-app
-          organization: ${SNYK_CICD_ORGANIZATION} 
+          organization: ${SNYK_CICD_ORGANIZATION}
       - run:
           name: Push Docker image to Docker Hub
           command: |
