@@ -1,10 +1,11 @@
 version: 2.1
 orbs:
   snyk: snyk/snyk@0.0.8
+  gcp-gcr: circleci/gcp-gcr@0.6.1
 jobs:
   build_test:
     docker:
-      - image: circleci/python:3.7.2
+      - image: circleci/python:3.7.4
     steps:
       - checkout
       - run:
@@ -12,32 +13,71 @@ jobs:
           command: |
             echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV && source $BASH_ENV
             pip install --user -r requirements.txt
+      - snyk/scan
       - run:
           name: Run Tests
           command: |
             pytest
-  build_push_image:
+  build_push_image_docker_hub:
     docker:
-      - image: circleci/python:3.7.2
+      - image: circleci/python:3.7.4
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: false
       - run:
-          name: Build and push Docker image
+          name: Build and push Docker image to Docker Hub
           command: |
             echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV
             echo 'export TAG=${CIRCLE_SHA1}' >> $BASH_ENV
-            echo 'export IMAGE_NAME=orb-snyk' >> $BASH_ENV && source $BASH_ENV
+            echo 'export IMAGE_NAME=$CIRCLE_PROJECT_REPONAME' >> $BASH_ENV && source $BASH_ENV
             pip install --user -r requirements.txt
             pyinstaller -F hello_world.py
             docker build -t $DOCKER_LOGIN/$IMAGE_NAME -t $DOCKER_LOGIN/$IMAGE_NAME:$TAG .
             echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
+      - snyk/scan:
+          fail-on-issues: false
+          monitor-on-build: true
+          docker-image-name: $DOCKER_LOGIN/$IMAGE_NAME:$TAG
+          target-file: "Dockerfile"
+          project: ${CIRCLE_PROJECT_REPONAME}/${CIRCLE_BRANCH}-app
+          organization: ${SNYK_CICD_ORGANIZATION}
+      - run:
+          name: Push to Docker Hub
             docker push $DOCKER_LOGIN/$IMAGE_NAME
+  build_push_image_gcr:
+    docker:
+      - image: circleci/python:3.7.4
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: false
+      - 
+      - run:
+          name: Build and push Docker image to GCR GCP
+          command: |
+            echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV
+            echo ${GOOGLE_CLOUD_KEYS} | base64 --decode --ignore-garbage > gcp_keys_creds.json
+            echo 'export GCLOUD_KEYS=gcp_keys_creds.json' >> $BASH_ENV
+            echo 'export TAG=${CIRCLE_SHA1}' >> $BASH_ENV
+            echo 'export IMAGE_NAME=$CIRCLE_PROJECT_REPONAME' >> $BASH_ENV && source $BASH_ENV
+            pip install --user -r requirements.txt
+            pyinstaller -F hello_world.py
+            docker build -t us.gcr.io/$GCP_PROJECT_ID/$IMAGE_NAME -t us.gcr.io/$GCP_PROJECT_ID/$IMAGE_NAME:$TAG .
+      - gcp-gcr/gcr-auth:
+          gcloud-service-key: $GCLOUD_KEYS
+          google-project-id: "cicd-workshops"
+      - gcp_gcr/push-image:
+          google-project-id: $GCP_PROJECT_ID
+          registry-url: "us.gcr.io"
+          image: $IMAGE_NAME
 workflows:
   build_test_deploy:
     jobs:
       - build_test
-      - build_push_image:
+      - build_push_image_docker_hub:
           requires:
             - build_test
+      - build_push_image_gcr:
+          requires:
+            -build_test
