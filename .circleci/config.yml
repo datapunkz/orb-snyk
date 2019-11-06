@@ -2,6 +2,7 @@ version: 2.1
 orbs:
   snyk: snyk/snyk@0.0.8
   gcp-gcr: circleci/gcp-gcr@0.6.1
+  cloudrun: circleci/gcp-cloud-run@dev:alpha
 jobs:
   build_test:
     docker:
@@ -26,7 +27,7 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: false
       - run:
-          name: Build and push Docker image to Docker Hub
+          name: Build binary app and Docker image
           command: |
             echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV
             echo 'export TAG=${CIRCLE_SHA1}' >> $BASH_ENV
@@ -53,7 +54,7 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: false
       - run:
-          name: Build and push Docker image to GCR GCP
+          name: Build app binary and Docker image
           command: |
             echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV
             echo ${GCP_PROJECT_KEY} | base64 --decode --ignore-garbage > $HOME/gcloud-service-key.json
@@ -71,6 +72,11 @@ jobs:
           google-project-id: GCP_PROJECT_ID
           registry-url: "us.gcr.io"
           image: $IMAGE_NAME
+      - cloudrun/deploy:
+          platform:
+          image: $IMAGE_NAME
+          service-name: "orb-snky-app"
+          region: $GOOGLE_COMPUTE_ZONE          
 workflows:
   build_test_deploy:
     jobs:
