@@ -57,7 +57,7 @@ jobs:
           command: |
             echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV
             echo ${GOOGLE_CLOUD_KEYS} | base64 --decode --ignore-garbage > ~/gcloud-service-key.json
-            echo 'export GOOGLE_CLOUD_KEYS=~/gcloud-service-key.json' >> $BASH_ENV
+            echo 'export GOOGLE_CLOUD_KEYS=cat ~/gcloud-service-key.json' >> $BASH_ENV &&  rm -rf ~/gcloud-service-key.json
             echo 'export TAG=${CIRCLE_SHA1}' >> $BASH_ENV
             echo 'export IMAGE_NAME=$CIRCLE_PROJECT_REPONAME' >> $BASH_ENV && source $BASH_ENV
             pip install --user -r requirements.txt
