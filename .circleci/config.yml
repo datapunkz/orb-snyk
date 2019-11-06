@@ -72,12 +72,9 @@ jobs:
           google-project-id: GCP_PROJECT_ID
           registry-url: "us.gcr.io"
           image: $IMAGE_NAME
-      # - cloudrun/build:
-      #     source: Dockerfile
-      #     tag: $IMAGE_NAME
       - cloudrun/deploy:
           platform: "managed"
-          image: $IMAGE_NAME
+          image: "us.gcr.io/$GCP_PROJECT_ID/$IMAGE_NAME"
           service-name: "orb-snky-app"
           region: $GOOGLE_COMPUTE_ZONE
           unauthenticated: true 
