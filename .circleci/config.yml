@@ -75,9 +75,13 @@ jobs:
       - cloudrun/deploy:
           platform: "managed"
           image: "us.gcr.io/$GCP_PROJECT_ID/$IMAGE_NAME"
-          service-name: "orb-snky-app"
+          service-name: "${$CIRCLE_PROJECT_REPONAME}-app"
           region: $GOOGLE_COMPUTE_ZONE
-          unauthenticated: true 
+          unauthenticated: true
+      - run:
+          - name: "Cloud Run Service Details"
+          - command: |
+              gcloud beta run services describe ${$CIRCLE_PROJECT_REPONAME}-app --platform=managed --region=$GOOGLE_COMPUTE_ZONE
 workflows:
   build_test_deploy:
     jobs:
