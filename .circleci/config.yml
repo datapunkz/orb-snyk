@@ -14,7 +14,7 @@ jobs:
           command: |
             echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV && source $BASH_ENV
             pip install --user -r requirements.txt
-      - snyk/scan
+      # - snyk/scan
       - run:
           name: Run Tests
           command: |
@@ -36,13 +36,13 @@ jobs:
             pyinstaller -F hello_world.py
             docker build -t $DOCKER_LOGIN/$IMAGE_NAME -t $DOCKER_LOGIN/$IMAGE_NAME:$TAG .
             echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
-      - snyk/scan:
-          fail-on-issues: false
-          monitor-on-build: true
-          docker-image-name: $DOCKER_LOGIN/$IMAGE_NAME:$TAG
-          target-file: "Dockerfile"
-          project: ${CIRCLE_PROJECT_REPONAME}/${CIRCLE_BRANCH}-app
-          organization: ${SNYK_CICD_ORGANIZATION}
+      # - snyk/scan:
+      #     fail-on-issues: false
+      #     monitor-on-build: true
+      #     docker-image-name: $DOCKER_LOGIN/$IMAGE_NAME:$TAG
+      #     target-file: "Dockerfile"
+      #     project: ${CIRCLE_PROJECT_REPONAME}/${CIRCLE_BRANCH}-app
+      #     organization: ${SNYK_CICD_ORGANIZATION}
       - run:
           name: Push to Docker Hub
           command: docker push $DOCKER_LOGIN/$IMAGE_NAME
@@ -64,19 +64,23 @@ jobs:
             pip install --user -r requirements.txt
             pyinstaller -F hello_world.py
             docker build -t us.gcr.io/$GCP_PROJECT_ID/$IMAGE_NAME -t us.gcr.io/$GCP_PROJECT_ID/$IMAGE_NAME:$TAG .
-      - gcp-gcr/gcr-auth:
-          gcloud-service-key: GOOGLE_CLOUD_KEYS
-          google-project-id: GCP_PROJECT_ID
-          google-compute-zone: GOOGLE_COMPUTE_ZONE
-      - gcp-gcr/push-image:
-          google-project-id: GCP_PROJECT_ID
-          registry-url: "us.gcr.io"
-          image: $IMAGE_NAME
+      # - gcp-gcr/gcr-auth:
+      #     gcloud-service-key: GOOGLE_CLOUD_KEYS
+      #     google-project-id: GCP_PROJECT_ID
+      #     google-compute-zone: GOOGLE_COMPUTE_ZONE
+      # - gcp-gcr/push-image:
+      #     google-project-id: GCP_PROJECT_ID
+      #     registry-url: "us.gcr.io"
+      #     image: $IMAGE_NAME
+      - cloudrun/build:
+          source: Dockerfile
+          tag: "us.gcr.io/$GCP_PROJECT_ID/$IMAGE_NAME"
       - cloudrun/deploy:
-          platform:
+          platform: "managed"
           image: $IMAGE_NAME
           service-name: "orb-snky-app"
-          region: $GOOGLE_COMPUTE_ZONE          
+          region: $GOOGLE_COMPUTE_ZONE
+          unauthenticated: true 
 workflows:
   build_test_deploy:
     jobs:
