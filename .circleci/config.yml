@@ -81,7 +81,7 @@ jobs:
       - run:
           - name: "Cloud Run Service Details"
           - command: |
-              gcloud beta run services describe ${$CIRCLE_PROJECT_REPONAME}-app --platform=managed --region=$GOOGLE_COMPUTE_ZONE
+              gcloud beta run services describe "${$CIRCLE_PROJECT_REPONAME}-app" --platform=managed --region=$GOOGLE_COMPUTE_ZONE
 workflows:
   build_test_deploy:
     jobs:
