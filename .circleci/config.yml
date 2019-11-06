@@ -64,10 +64,10 @@ jobs:
             pyinstaller -F hello_world.py
             docker build -t us.gcr.io/$GCP_PROJECT_ID/$IMAGE_NAME -t us.gcr.io/$GCP_PROJECT_ID/$IMAGE_NAME:$TAG .
       - gcp-gcr/gcr-auth:
-          gcloud-service-key: $GCLOUD_KEYS
-          google-project-id: "cicd-workshops"
+          gcloud-service-key: ${GCLOUD_KEYS}
+          google-project-id: ${$GCP_PROJECT_ID}
       - gcp_gcr/push-image:
-          google-project-id: $GCP_PROJECT_ID
+          google-project-id: ${$GCP_PROJECT_ID}
           registry-url: "us.gcr.io"
           image: $IMAGE_NAME
 workflows:
