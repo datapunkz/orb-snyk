@@ -74,7 +74,7 @@ jobs:
       #     image: $IMAGE_NAME
       - cloudrun/build:
           source: Dockerfile
-          tag: "us.gcr.io/$GCP_PROJECT_ID/$IMAGE_NAME"
+          tag: $IMAGE_NAME
       - cloudrun/deploy:
           platform: "managed"
           image: $IMAGE_NAME
