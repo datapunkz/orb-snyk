@@ -74,12 +74,12 @@ jobs:
       - pulumi/update:
           stack: k8s
           working_directory: ${HOME}/project/pulumi/gcp/orb-snyk
-      - run:
-          name: Run Smoke Test against GKE and Destroy
-          command: |
-            echo 'Initializing Smoke Tests on the GKE Cluster'
-            ./tests/smoke_test
-            echo "GKE Cluster Tested & Destroyed"
+      # - run:
+      #     name: Run Smoke Test against GKE and Destroy
+      #     command: |
+      #       echo 'Initializing Smoke Tests on the GKE Cluster'
+      #       ./tests/smoke_test
+      #       echo "GKE Cluster Tested & Destroyed"
 workflows:
   build_test_deploy:
     jobs:
