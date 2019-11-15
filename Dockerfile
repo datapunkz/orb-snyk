@@ -5,6 +5,6 @@ WORKDIR /opt/hello_world/
 
 COPY dist/hello_world /opt/hello_world/
 
-EXPOSE 80
+EXPOSE 8080
 
 CMD [ "./hello_world" ]
