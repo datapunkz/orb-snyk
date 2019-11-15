@@ -50,6 +50,3 @@ workflows:
       - build_push_image_docker_hub:
           requires:
             - build_test
-      - build_push_image_gcr:
-          requires:
-            - build_test
