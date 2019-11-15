@@ -89,4 +89,4 @@ workflows:
             - test_scan
       - deploy_to_gcp:
           requires:
-            - test_scan
+            - build_push_image_docker_hub
