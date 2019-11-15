@@ -1,8 +1,6 @@
 version: 2.1
 orbs:
   snyk: snyk/snyk@0.0.8
-  gcp-gcr: circleci/gcp-gcr@0.6.1
-  cloudrun: circleci/gcp-cloud-run@dev:alpha
 jobs:
   build_test:
     docker:
@@ -45,18 +43,6 @@ jobs:
       - run:
           name: Push to Docker Hub
           command: docker push $DOCKER_LOGIN/$IMAGE_NAME
-  build_push_image_gcr:
-    docker:
-      - image: circleci/python:3.7.4
-    steps:
-      - checkout
-      - setup_remote_docker:
-          docker_layer_caching: false
-      - run:
-          name: Build app binary and Docker image
-          command: |
-            echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
-            docker push $DOCKER_LOGIN/$IMAGE_NAME
 workflows:
   build_test_deploy:
     jobs:
