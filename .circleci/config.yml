@@ -2,7 +2,7 @@ version: 2.1
 orbs:
   snyk: snyk/snyk@0.0.8
 jobs:
-  build_test:
+  test_scan:
     docker:
       - image: circleci/python:3.7.4
     steps:
@@ -11,12 +11,13 @@ jobs:
           name: Install Python Dependencies
           command: |
             echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV && source $BASH_ENV
-            pip install --user -r requirements.txt
+            pipenv install --skip-lock
+            # pip install --user -r requirements.txt
       - snyk/scan
       - run:
           name: Run Tests
           command: |
-            pytest
+            pipenv run pytest
   build_push_image_docker_hub:
     docker:
       - image: circleci/python:3.7.4
@@ -30,7 +31,9 @@ jobs:
             echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV
             echo 'export TAG=${CIRCLE_SHA1}' >> $BASH_ENV
             echo 'export IMAGE_NAME=$CIRCLE_PROJECT_REPONAME' >> $BASH_ENV && source $BASH_ENV
-            pip install --user -r requirements.txt
+            # pip install --user -r requirements.txt
+            # pipenv install --skip-lock
+            pipenv run pyinstaller -F hello_world.py
             pyinstaller -F hello_world.py
             docker build -t $DOCKER_LOGIN/$IMAGE_NAME -t $DOCKER_LOGIN/$IMAGE_NAME:$TAG .
       - snyk/scan:
@@ -45,10 +48,44 @@ jobs:
           command: |
             echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
             docker push $DOCKER_LOGIN/$IMAGE_NAME
+  deploy_to_gcp:
+    docker:
+      - image: circleci/python:3.7.4
+        environment:
+          CLOUDSDK_PYTHON: '/usr/bin/python2.7'
+          GOOGLE_SDK_PATH: '~/google-cloud-sdk/'
+    steps:
+      - checkout
+      - pulumi/login:
+          access-token: ${PULUMI_ACCESS_TOKEN}
+      - run:
+          name: Install dependencies
+          command: |
+            cd ~/
+            pip install --user -r project/requirements.txt
+            curl -o gcp-cli.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk.tar.gz
+            tar -xzvf gcp-cli.tar.gz
+            echo ${GOOGLE_CLOUD_KEYS} | base64 --decode --ignore-garbage > ${HOME}/project/pulumi/gcp/orb-snyk/cicd_demo_gcp_creds.json
+            ./google-cloud-sdk/install.sh  --quiet
+            echo 'export PATH=$PATH:~/google-cloud-sdk/bin:~/.local/bin' >> $BASH_ENV
+            source $BASH_ENV
+            gcloud auth activate-service-account --key-file ${HOME}/project/pulumi/gcp/orb-snyk/cicd_demo_gcp_creds.json
+      - pulumi/update:
+          stack: k8s
+          working_directory: ${HOME}/project/pulumi/gcp/orb-snyk
+      - run:
+          name: Run Smoke Test against GKE and Destroy
+          command: |
+            echo 'Initializing Smoke Tests on the GKE Cluster'
+            ./tests/smoke_test
+            echo "GKE Cluster Tested & Destroyed"
 workflows:
   build_test_deploy:
     jobs:
-      - build_test
+      - test_scan
       - build_push_image_docker_hub:
           requires:
-            - build_test
+            - test_scan
+      - deploy_to_gcp:
+          requires:
+            - test_scan
