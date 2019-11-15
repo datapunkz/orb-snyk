@@ -1,6 +1,7 @@
 version: 2.1
 orbs:
   snyk: snyk/snyk@0.0.8
+  pulumi: pulumi/pulumi@1.0.1  
 jobs:
   test_scan:
     docker:
