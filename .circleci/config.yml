@@ -42,7 +42,9 @@ jobs:
           organization: ${SNYK_CICD_ORGANIZATION} 
       - run:
           name: Push to Docker Hub
-          command: docker push $DOCKER_LOGIN/$IMAGE_NAME
+          command: |
+            echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
+            docker push $DOCKER_LOGIN/$IMAGE_NAME
 workflows:
   build_test_deploy:
     jobs:
