@@ -1,0 +1,8 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: orb-snyk-ingress
+spec:
+  backend:
+    serviceName: orb-snyk-svc
+    servicePort: 80

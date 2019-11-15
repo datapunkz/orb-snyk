@@ -1,0 +1,22 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: orb-snyk-app
+  labels:
+    app: orb-snyk
+spec:
+  containers:
+    - name: orb-snyk-app
+      image: ariv3ra/orb-snyk:latest
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: orb-snyk-svc
+spec:
+  selector:
+    app: orb-snyk
+  ports:
+    - port: 5000 # Default port for image
