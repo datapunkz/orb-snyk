@@ -118,7 +118,7 @@ gke_service = Service(
     },
     spec={
         'type': "LoadBalancer",
-        'ports': [{'port': 80, 'target_port': 5000}],
+        'ports': [{'port': 80, 'target_port': 8080}],
         'selector': app_label,
     },
     __opts__=ResourceOptions(provider=cluster_provider)
