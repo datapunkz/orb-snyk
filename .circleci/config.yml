@@ -13,7 +13,6 @@ jobs:
           command: |
             echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV && source $BASH_ENV
             pipenv install --skip-lock
-            # pip install --user -r requirements.txt
       - snyk/scan
       - run:
           name: Run Tests
@@ -32,10 +31,8 @@ jobs:
             echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV
             echo 'export TAG=${CIRCLE_SHA1}' >> $BASH_ENV
             echo 'export IMAGE_NAME=$CIRCLE_PROJECT_REPONAME' >> $BASH_ENV && source $BASH_ENV
-            # pip install --user -r requirements.txt
             pipenv install --skip-lock
             pipenv run pyinstaller -F hello_world.py
-            # pyinstaller -F hello_world.py
             docker build -t $DOCKER_LOGIN/$IMAGE_NAME -t $DOCKER_LOGIN/$IMAGE_NAME:$TAG .
       - snyk/scan:
           fail-on-issues: false
@@ -74,12 +71,6 @@ jobs:
       - pulumi/update:
           stack: k8s
           working_directory: ${HOME}/project/pulumi/gcp/orb-snyk
-      # - run:
-      #     name: Run Smoke Test against GKE and Destroy
-      #     command: |
-      #       echo 'Initializing Smoke Tests on the GKE Cluster'
-      #       ./tests/smoke_test
-      #       echo "GKE Cluster Tested & Destroyed"
 workflows:
   build_test_deploy:
     jobs:
