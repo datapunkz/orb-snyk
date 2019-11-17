@@ -75,9 +75,9 @@ workflows:
   build_test_deploy:
     jobs:
       - test_scan
-      - build_push_image_docker_hub:
-          requires:
-            - test_scan
-      - deploy_to_gcp:
-          requires:
-            - build_push_image_docker_hub
+      # - build_push_image_docker_hub:
+      #     requires:
+      #       - test_scan
+      # - deploy_to_gcp:
+      #     requires:
+      #       - build_push_image_docker_hub
