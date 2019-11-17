@@ -1,8 +1,8 @@
-flask==1.0.0
-pymongo==3.8.0
-pyinstaller==3.5
-pytest==5.2.1
-pylint==2.4.2
-pulumi==0.17.23
-pulumi-gcp==0.18.13
-pulumi-kubernetes==0.25.2
+flask
+pymongo
+pyinstaller
+pytest
+pylint
+pulumi
+pulumi-gcp
+pulumi-kubernetes
