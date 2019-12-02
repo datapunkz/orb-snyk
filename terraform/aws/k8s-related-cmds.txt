@@ -10,6 +10,15 @@ kubectl apply -f k8s-configmap.yaml
 # Check nodes status
 kubectl get nodes
 
+# Apply Deployment file
+kubectl apply -f orb-snyk-deploy.yaml
+
+# Apply Service file
+
+kubectl apply -f orb-snyk-service.yaml
+
+===============================================================================
+
 # Create resources for Nginx Ingress service
 
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml
@@ -20,11 +29,11 @@ kubectl apply -f https://raw.githubusercontent.com/cornellanthony/nlb-nginxIngre
 
 
 
-# Deploy orb-snyk Pod
+# Deploy orb-snyk
 kubectl create deployment snyk --image=ariv3ra/orb-snyk
 
 # get the orb-snyk docker image
-kubectl create service nodeport orb-snyk --tcp=80:5000
+kubectl create service nodeport orb-snyk --tcp=80:8080
 
 # Create Nginx Service which makes the service available 
 kubectl create service nodeport nginx --tcp=80:80
