@@ -20,6 +20,11 @@ variable "cluster-name" {
 # and can be swapped out as necessary.
 data "aws_availability_zones" "available" {}
 
+# Get the machine's local IP address
+data "http" "myip" {
+  url = "http://ipv4.icanhazip.com"
+}
+
 resource "aws_vpc" "demo" {
   cidr_block = "10.0.0.0/16"
 
@@ -33,7 +38,6 @@ resource "aws_vpc" "demo" {
 
 resource "aws_subnet" "demo" {
   count = 2
-
   availability_zone = data.aws_availability_zones.available.names[count.index]
   cidr_block        = "10.0.${count.index}.0/24"
   vpc_id            = aws_vpc.demo.id
@@ -71,7 +75,6 @@ resource "aws_route_table_association" "demo" {
 
 resource "aws_iam_role" "demo-cluster" {
   name = "terraform-eks-demo-cluster"
-
   assume_role_policy = <<POLICY
 {
   "Version": "2012-10-17",
@@ -121,7 +124,7 @@ resource "aws_security_group" "demo-cluster" {
 #           to the Kubernetes. You will need to replace A.B.C.D below with
 #           your real IP. Services like icanhazip.com can help you find this.
 resource "aws_security_group_rule" "demo-cluster-ingress-workstation-https" {
-  cidr_blocks       = ["24.234.111.50/32"]
+  cidr_blocks       = ["${chomp(data.http.myip.body)}/32"]
   description       = "Allow workstation to communicate with the cluster API Server"
   from_port         = 443
   protocol          = "tcp"
@@ -226,8 +229,9 @@ resource "aws_security_group_rule" "demo-node-ingress-cluster" {
   to_port                  = 65535
   type                     = "ingress"
 }
-  # Worker Node Access to EKS Master Cluster
-  resource "aws_security_group_rule" "demo-cluster-ingress-node-https" {
+
+# Worker Node Access to EKS Master Cluster
+resource "aws_security_group_rule" "demo-cluster-ingress-node-https" {
   description              = "Allow pods to communicate with the cluster API Server"
   from_port                = 443
   protocol                 = "tcp"
@@ -243,7 +247,6 @@ data "aws_ami" "eks-worker" {
     name   = "name"
     values = ["amazon-eks-node-${aws_eks_cluster.demo.version}-v*"]
   }
-
   most_recent = true
   owners      = ["602401143452"] # Amazon EKS AMI Account ID
 }
@@ -259,10 +262,10 @@ data "aws_region" "current" {}
 # More information: https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
 locals {
   demo-node-userdata = <<USERDATA
-#!/bin/bash
-set -o xtrace
-/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.demo.endpoint}' --b64-cluster-ca '${aws_eks_cluster.demo.certificate_authority.0.data}' '${var.cluster-name}'
-USERDATA
+  #!/bin/bash
+  set -o xtrace
+  /etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.demo.endpoint}' --b64-cluster-ca '${aws_eks_cluster.demo.certificate_authority.0.data}' '${var.cluster-name}'
+  USERDATA
 }
 
 resource "aws_launch_configuration" "demo" {
@@ -282,31 +285,29 @@ resource "aws_launch_configuration" "demo" {
 }
 
 resource "aws_autoscaling_group" "demo" {
-  desired_capacity     = 3
+  desired_capacity = 3
   launch_configuration = aws_launch_configuration.demo.id
-  max_size             = 3
-  min_size             = 2
-  name                 = "terraform-eks-demo"
-  vpc_zone_identifier  = aws_subnet.demo.*.id
+  max_size = 3
+  min_size = 2
+  name = "terraform-eks-demo"
+  vpc_zone_identifier = aws_subnet.demo.*.id
 
   tag {
-    key                 = "Name"
-    value               = "terraform-eks-demo"
+    key = "Name"
+    value = "terraform-eks-demo"
     propagate_at_launch = true
   }
 
   tag {
-    key                 = "kubernetes.io/cluster/${var.cluster-name}"
-    value               = "owned"
+    key = "kubernetes.io/cluster/${var.cluster-name}"
+    value = "owned"
     propagate_at_launch = true
   }
 }
 
 # K8s Config Output
 locals {
-  config_map_aws_auth = <<CONFIGMAPAWSAUTH
-
-
+    config_map_aws_auth = <<CONFIGMAPAWSAUTH
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -320,6 +321,24 @@ data:
         - system:bootstrappers
         - system:nodes
 CONFIGMAPAWSAUTH
+}
+
+resource "null_resource" "aws_eks_update_kubeconfig" {
+  // Create the k8s config file
+  provisioner "local-exec" {
+    command = "whoami && aws eks --region us-east-1 update-kubeconfig --name ${var.cluster-name}"
+//    interpreter = ["aws", "eks",]
+  }
+  depends_on = [aws_autoscaling_group.demo]
+}
+
+resource "null_resource" "create_kubeconfig_file" {
+  // Create the k8s config file
+  provisioner "local-exec" {
+    command = "terraform config_map_aws_auth > k8s-configmap.yaml"
+//    interpreter = ["terraform", "output"]
+  }
+  depends_on = [null_resource.aws_eks_update_kubeconfig]
 }
 
 output "config_map_aws_auth" {
