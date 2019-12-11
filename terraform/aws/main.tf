@@ -1,6 +1,11 @@
 provider "aws" {
   region  = "us-east-1"
+  profile = "default"
+//  access_key = "AKIAJERIMOYAQNFD7I6Q"
+//  secret_key = "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"
 }
+
+provider "kubernetes" {}
 
 terraform {
   backend "remote" {
@@ -10,6 +15,12 @@ terraform {
     }
   }
 }
+
+//terraform {
+//  backend "local" {
+//    path = ".terraform/terraform.tfstate"
+//  }
+//}
 
 variable "cluster-name" {
   default = "terraform-eks-demo"
@@ -323,22 +334,58 @@ data:
 CONFIGMAPAWSAUTH
 }
 
+# Install awscli when using remote state configs such as Terraform Cloud
+//resource "null_resource" "install_tools" {
+//  # Create the k8s config file
+//  provisioner "local-exec" {
+//    command = "echo 'Install AWS CLI ${local.config_map_aws_auth}' && curl 'https://s3.amazonaws.com/aws-cli/awscli-bundle.zip' -o 'awscli-bundle.zip' && unzip awscli-bundle.zip && ./awscli-bundle/install -b ~/bin/aws"
+//  }
+//  depends_on = [aws_autoscaling_group.demo]
+//}
+
+//variable "install_aws" {
+//  default = <<EOF
+//    curl 'https://s3.amazonaws.com/aws-cli/awscli-bundle.zip' -o 'awscli-bundle.zip' && unzip awscli-bundle.zip && ./awscli-bundle/install -b ~/bin/aws /
+//  EOF
+//}
+
+//resource "null_resource" "aws_eks_update_kubeconfig" {
+//  # Create the k8s config file
+//  provisioner "local-exec" {
+//    command = "${var.install_aws} && $AWS_PATH/aws eks --region us-east-1 update-kubeconfig --name ${var.cluster-name} && ls -la ~/.kube/config"
+//    environment = {
+//      AWS_PATH = "/home/terraform/bin"
+//    }
+//  }
+//  depends_on = [
+//    aws_autoscaling_group.demo
+//  ]
+//}
+
 resource "null_resource" "aws_eks_update_kubeconfig" {
-  // Create the k8s config file
+  # Create the k8s config file
   provisioner "local-exec" {
-    command = "whoami && aws eks --region us-east-1 update-kubeconfig --name ${var.cluster-name}"
-//    interpreter = ["aws", "eks",]
+    command = "aws eks --region us-east-1 update-kubeconfig --name ${var.cluster-name} && ls -la ~/.kube/config"
   }
   depends_on = [aws_autoscaling_group.demo]
 }
 
 resource "null_resource" "create_kubeconfig_file" {
-  // Create the k8s config file
+  # Create the k8s config file
   provisioner "local-exec" {
-    command = "terraform config_map_aws_auth > k8s-configmap.yaml"
-//    interpreter = ["terraform", "output"]
+    command = "terraform output config_map_aws_auth > k8s-configmap.yaml"
   }
   depends_on = [null_resource.aws_eks_update_kubeconfig]
+}
+
+resource "kubernetes_config_map" "k8s_configmap" {
+  metadata {
+    name = "aws-auth"
+    namespace = "kube-system"
+  }
+  data = {
+    "k8s-configmap.yaml" = "${file("${path.module}/k8s-configmap.yaml")}"
+  }
 }
 
 output "config_map_aws_auth" {
